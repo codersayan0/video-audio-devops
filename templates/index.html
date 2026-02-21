@@ -1,16 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Video to Audio Converter</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <title>Video & Audio Downloader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Video to Audio Downloader</h1>
-        <form action="/download" method="post">
-            <input type="text" name="url" placeholder="Paste video link" required>
-            <button type="submit">Download MP3</button>
-        </form>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>Video to Audio Converter</h1>
+        <p class="subtitle">Convert Videos to MP3 or MP4 Instantly</p>
+
+        <!-- 🔹 YouTube Link Section -->
+        <div class="section">
+            <h3>Download From Any Video Link</h3>
+
+            <form action="/download" method="post">
+                <input type="text" name="url" placeholder="Paste video link here (YouTube, Instagram, Facebook...)" required>
+
+                <div class="button-group">
+                    <button type="submit" name="format_type" value="audio">
+                        Download MP3
+                    </button>
+
+                    <button type="submit" name="format_type" value="video" class="video-btn">
+                        Download MP4
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- 🔹 Upload Section -->
+        <div class="section">
+            <h3>Upload Video From Computer</h3>
+
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept="video/*" required>
+
+                <button type="submit" class="upload-btn">
+                    Convert to MP3
+                </button>
+            </form>
+        </div>
+
+        <!-- Features -->
+        <div class="features">
+            <span>⚡ Fast</span>
+            <span>🔒 Secure</span>
+            <span>🎧 High Quality</span>
+        </div>
+
     </div>
+
+</div>
+
 </body>
 </html>
