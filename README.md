@@ -1,6 +1,6 @@
 # 🚀 Universal Video Downloader (DevOps Powered)
 
-![Project Architecture](workflow.png)
+![Project Architecture](Workflow.png)
 
 ---
 
