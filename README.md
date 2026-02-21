@@ -67,26 +67,6 @@ The image above represents the complete working structure of the system.
 
 ---
 
-# 📂 Project Structure
-video-downloader/
-│
-├── app.py
-├── Dockerfile
-├── requirements.txt
-│
-├── templates/
-│ └── index.html
-│
-├── static/
-│ └── style.css
-│
-├── workflow.png
-│
-└── downloads/
-
-
----
-
 # 🐳 Docker Usage
 
 ### Build Image
