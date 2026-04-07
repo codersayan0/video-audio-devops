@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mediadrop
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free           # upgrade to 'starter' for persistent disk & no sleep
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+    autoDeploy: true     # auto-deploy on every push to main branch

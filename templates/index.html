@@ -2,66 +2,276 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Video & Audio Downloader</title>
+    <title>MediaDrop — Download Any Video</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body>
 
-<div class="container">
+<div class="noise"></div>
 
-    <div class="card">
+<header>
+    <div class="logo">
+        <span class="logo-icon">▼</span>
+        <span>MediaDrop</span>
+    </div>
+    <div class="badge">v2.0</div>
+</header>
 
-        <h1>Video to Audio Converter</h1>
-        <p class="subtitle">Convert Videos to MP3 or MP4 Instantly</p>
+<main>
+    <section class="hero">
+        <h1>Download <em>anything.</em><br>Instantly.</h1>
+        <p class="hero-sub">YouTube · Instagram · Facebook · TikTok · Twitter/X · and 1000+ sites</p>
+    </section>
 
-        <!-- 🔹 YouTube Link Section -->
-        <div class="section">
-            <h3>Download From Any Video Link</h3>
-
-            <form action="/download" method="post">
-                <input type="text" name="url" placeholder="Paste video link here (YouTube, Instagram, Facebook...)" required>
-
-                <div class="button-group">
-                    <button type="submit" name="format_type" value="audio">
-                        Download MP3
-                    </button>
-
-                    <button type="submit" name="format_type" value="video" class="video-btn">
-                        Download MP4
-                    </button>
-                </div>
-            </form>
+    <!-- URL Download Card -->
+    <div class="card" id="urlCard">
+        <div class="card-label">
+            <span class="dot green"></span> Download from Link
         </div>
 
-        <!-- Divider -->
-        <div class="divider"></div>
-
-        <!-- 🔹 Upload Section -->
-        <div class="section">
-            <h3>Upload Video From Computer</h3>
-
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <input type="file" name="file" accept="video/*" required>
-
-                <button type="submit" class="upload-btn">
-                    Convert to MP3
-                </button>
-            </form>
+        <div class="input-wrap">
+            <input type="text" id="urlInput" placeholder="Paste video URL here…" autocomplete="off" spellcheck="false">
+            <button class="btn-fetch" id="fetchBtn" onclick="fetchInfo()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Inspect
+            </button>
         </div>
 
-        <!-- Features -->
-        <div class="features">
-            <span>⚡ Fast</span>
-            <span>🔒 Secure</span>
-            <span>🎧 High Quality</span>
+        <!-- Preview Panel -->
+        <div class="preview-panel" id="previewPanel" style="display:none">
+            <img id="previewThumb" src="" alt="thumbnail">
+            <div class="preview-meta">
+                <div class="preview-title" id="previewTitle"></div>
+                <div class="preview-sub" id="previewSub"></div>
+            </div>
         </div>
 
+        <div class="btn-row">
+            <button class="btn mp3" onclick="downloadUrl('audio')">
+                <span class="btn-icon">🎵</span>
+                <span>
+                    <strong>Download MP3</strong>
+                    <small>Audio · 192kbps</small>
+                </span>
+            </button>
+            <button class="btn mp4" onclick="downloadUrl('video')">
+                <span class="btn-icon">🎬</span>
+                <span>
+                    <strong>Download MP4</strong>
+                    <small>Best quality video</small>
+                </span>
+            </button>
+        </div>
     </div>
 
+    <!-- Divider -->
+    <div class="or-divider"><span>or</span></div>
+
+    <!-- Upload Card -->
+    <div class="card" id="uploadCard">
+        <div class="card-label">
+            <span class="dot blue"></span> Convert Local File
+        </div>
+
+        <label class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept="video/*" onchange="handleFileSelect(this)">
+            <div class="drop-icon">📁</div>
+            <div class="drop-text" id="dropText">Drop video file here or <u>browse</u></div>
+            <small>MP4, MKV, MOV, AVI, WebM…</small>
+        </label>
+
+        <button class="btn upload-btn" id="convertBtn" onclick="uploadFile()" disabled>
+            <span class="btn-icon">⚡</span>
+            <span>
+                <strong>Convert to MP3</strong>
+                <small>192kbps · High Quality</small>
+            </span>
+        </button>
+    </div>
+
+    <div class="features">
+        <div class="feature">⚡ Fast processing</div>
+        <div class="feature">🔒 No data stored</div>
+        <div class="feature">🎧 192kbps audio</div>
+        <div class="feature">📦 Docker-powered</div>
+    </div>
+</main>
+
+<!-- Progress overlay -->
+<div class="progress-overlay" id="progressOverlay">
+    <div class="progress-box">
+        <div class="spinner"></div>
+        <div class="progress-title" id="progressTitle">Processing…</div>
+        <div class="progress-sub" id="progressSub">This may take a moment</div>
+    </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+    async function fetchInfo() {
+        const url = document.getElementById('urlInput').value.trim();
+        if (!url) return toast('Please paste a URL first', 'error');
+
+        const btn = document.getElementById('fetchBtn');
+        btn.textContent = '…';
+        btn.disabled = true;
+
+        try {
+            const fd = new FormData();
+            fd.append('url', url);
+            const res = await fetch('/info', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            if (data.error) throw new Error(data.error);
+
+            document.getElementById('previewThumb').src = data.thumbnail;
+            document.getElementById('previewTitle').textContent = data.title;
+            document.getElementById('previewSub').textContent =
+                `${data.platform} · ${data.uploader} · ${formatDuration(data.duration)}`;
+            document.getElementById('previewPanel').style.display = 'flex';
+            toast('Video found! Choose a format below.', 'success');
+        } catch (e) {
+            toast(e.message, 'error');
+        } finally {
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Inspect`;
+            btn.disabled = false;
+        }
+    }
+
+    function downloadUrl(format) {
+        const url = document.getElementById('urlInput').value.trim();
+        if (!url) return toast('Please paste a URL first', 'error');
+
+        showProgress(
+            format === 'audio' ? 'Extracting audio…' : 'Downloading video…',
+            'yt-dlp is fetching and processing your file'
+        );
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/download';
+        form.style.display = 'none';
+        addField(form, 'url', url);
+        addField(form, 'format_type', format);
+        document.body.appendChild(form);
+
+        // Use iframe trick to detect completion
+        const iframe = document.createElement('iframe');
+        iframe.name = 'dl_frame';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        form.target = 'dl_frame';
+
+        iframe.onload = () => {
+            hideProgress();
+            try {
+                const txt = iframe.contentDocument.body.innerText;
+                if (txt && txt.includes('error')) {
+                    const parsed = JSON.parse(txt);
+                    toast(parsed.error, 'error');
+                }
+            } catch (_) {
+                toast('Download started!', 'success');
+            }
+            setTimeout(() => { iframe.remove(); form.remove(); }, 3000);
+        };
+
+        form.submit();
+        // Fallback hide after 90s
+        setTimeout(hideProgress, 90000);
+    }
+
+    function addField(form, name, value) {
+        const i = document.createElement('input');
+        i.type = 'hidden';
+        i.name = name;
+        i.value = value;
+        form.appendChild(i);
+    }
+
+    function handleFileSelect(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('dropText').textContent = `✅ ${file.name}`;
+        document.getElementById('convertBtn').disabled = false;
+    }
+
+    async function uploadFile() {
+        const input = document.getElementById('fileInput');
+        if (!input.files[0]) return toast('Please select a file first', 'error');
+
+        showProgress('Converting to MP3…', 'FFmpeg is processing your video file');
+
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+
+        try {
+            const res = await fetch('/upload', { method: 'POST', body: fd });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Conversion failed');
+            }
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const name = input.files[0].name.replace(/\.[^.]+$/, '') + '.mp3';
+            a.download = name;
+            a.click();
+            toast('Conversion complete! Downloading…', 'success');
+        } catch (e) {
+            toast(e.message, 'error');
+        } finally {
+            hideProgress();
+        }
+    }
+
+    function showProgress(title, sub) {
+        document.getElementById('progressTitle').textContent = title;
+        document.getElementById('progressSub').textContent = sub;
+        document.getElementById('progressOverlay').classList.add('active');
+    }
+
+    function hideProgress() {
+        document.getElementById('progressOverlay').classList.remove('active');
+    }
+
+    function toast(msg, type = 'info') {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = `toast ${type} show`;
+        setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
+    function formatDuration(sec) {
+        if (!sec) return '';
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Drag-and-drop
+    const dz = document.getElementById('dropZone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+        e.preventDefault();
+        dz.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            document.getElementById('fileInput').files = e.dataTransfer.files;
+            handleFileSelect(document.getElementById('fileInput'));
+        }
+    });
+
+    // Enter key on URL input
+    document.getElementById('urlInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') fetchInfo();
+    });
+</script>
 </body>
 </html>
