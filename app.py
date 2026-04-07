@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import yt_dlp
@@ -9,16 +9,38 @@ import subprocess
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# 🔍 Debug logs (VERY IMPORTANT)
+print("Current working directory:", os.getcwd())
+print("Files in root:", os.listdir())
+
+# ✅ Safe static mount
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+else:
+    print("WARNING: static folder not found")
+
+# ✅ Safe template setup
+if os.path.exists("templates"):
+    templates = Jinja2Templates(directory="templates")
+else:
+    templates = None
+    print("WARNING: templates folder not found")
 
 
+# 🔹 Home route (safe)
 @app.get("/")
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    try:
+        if templates:
+            return templates.TemplateResponse("index.html", {"request": request})
+        else:
+            return {"message": "Templates not found, API working"}
+    except Exception as e:
+        print("ERROR in home:", str(e))
+        return {"error": str(e)}
 
 
-# 🔹 Download YouTube / Instagram / Facebook
+# 🔹 Download API
 @app.post("/download")
 def download(url: str = Form(...), format_type: str = Form(...)):
     try:
@@ -27,7 +49,6 @@ def download(url: str = Form(...), format_type: str = Form(...)):
         unique_id = str(uuid.uuid4())
         output_template = f"/tmp/{unique_id}.%(ext)s"
 
-        # 🎵 AUDIO DOWNLOAD
         if format_type == "audio":
             ydl_opts = {
                 "format": "bestaudio/best",
@@ -44,7 +65,6 @@ def download(url: str = Form(...), format_type: str = Form(...)):
 
             file_path = f"/tmp/{unique_id}.mp3"
 
-        # 🎬 VIDEO DOWNLOAD
         elif format_type == "video":
             ydl_opts = {
                 "format": "bestvideo+bestaudio/best",
@@ -57,9 +77,11 @@ def download(url: str = Form(...), format_type: str = Form(...)):
 
             file_path = f"/tmp/{unique_id}.mp4"
 
-        # 🔍 Check file exists
+        else:
+            return {"error": "Invalid format type"}
+
         if not os.path.exists(file_path):
-            return {"error": "File not generated. Check ffmpeg or yt-dlp."}
+            return {"error": "File not generated"}
 
         return FileResponse(
             file_path,
@@ -68,11 +90,11 @@ def download(url: str = Form(...), format_type: str = Form(...)):
         )
 
     except Exception as e:
-        print("ERROR:", str(e))
-        return {"error": str(e)}
+        print("DOWNLOAD ERROR:", str(e))
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
-# 🔹 Upload video → convert to MP3
+# 🔹 Upload API
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
     try:
@@ -82,11 +104,9 @@ async def upload_video(file: UploadFile = File(...)):
         input_path = f"/tmp/{unique_id}_{file.filename}"
         output_path = f"/tmp/{unique_id}.mp3"
 
-        # Save uploaded file
         with open(input_path, "wb") as buffer:
             buffer.write(await file.read())
 
-        # Convert using ffmpeg
         subprocess.run([
             "ffmpeg",
             "-i", input_path,
@@ -95,7 +115,6 @@ async def upload_video(file: UploadFile = File(...)):
             output_path
         ], check=True)
 
-        # Check output
         if not os.path.exists(output_path):
             return {"error": "Conversion failed"}
 
@@ -106,5 +125,5 @@ async def upload_video(file: UploadFile = File(...)):
         )
 
     except Exception as e:
-        print("ERROR:", str(e))
-        return {"error": str(e)}
+        print("UPLOAD ERROR:", str(e))
+        return JSONResponse(content={"error": str(e)}, status_code=500)
