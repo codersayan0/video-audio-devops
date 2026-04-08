@@ -6,18 +6,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <style>
+    :root{--bg:#0d0d0f;--surface:#16161a;--surface2:#1e1e24;--border:#2a2a35;
+        --green:#00e87b;--blue:#3d8ef8;--text:#e8e8f0;--muted:#6b6b80;--r:16px;
+        --display:'Syne',sans-serif;--body:'DM Sans',sans-serif}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--body);background:var(--bg);color:var(--text);
+        min-height:100vh;padding:0 16px 80px;overflow-x:hidden}
+    /* Glows */
+    body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;
+        background:radial-gradient(circle,rgba(0,232,123,.05) 0%,transparent 70%);
+        pointer-events:none;z-index:0}
+    body::after{content:'';position:fixed;bottom:-200px;right:-200px;width:500px;height:500px;
+        background:radial-gradient(circle,rgba(61,142,248,.05) 0%,transparent 70%);
+        pointer-events:none;z-index:0}
+    /* Layout */
+    header{position:relative;z-index:10;max-width:580px;margin:0 auto;
+        padding:28px 0 0;display:flex;align-items:center;justify-content:space-between}
+    .logo{font-family:var(--display);font-weight:800;font-size:20px;
+        display:flex;align-items:center;gap:8px}
+    .logo span:first-child{color:var(--green)}
+    .badge{font-size:11px;font-weight:700;color:var(--muted);
+        border:1px solid var(--border);border-radius:20px;padding:3px 10px}
+    main{position:relative;z-index:10;max-width:580px;margin:0 auto}
+    .hero{padding:48px 0 36px}
+    h1{font-family:var(--display);font-size:clamp(32px,7vw,52px);font-weight:800;
+        line-height:1.05;letter-spacing:-2px;margin-bottom:16px}
+    h1 em{font-style:normal;color:var(--green)}
+    .hero-sub{font-size:14px;color:var(--muted);line-height:1.6}
+    /* Card */
+    .card{background:var(--surface);border:1px solid var(--border);
+        border-radius:var(--r);padding:24px;margin-bottom:16px;
+        animation:up .4s ease both}
+    .card:nth-of-type(2){animation-delay:.08s}
+    @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+    .card-label{font-size:12px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+        color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:18px}
+    .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+    .dot.g{background:var(--green);box-shadow:0 0 8px var(--green)}
+    .dot.b{background:var(--blue);box-shadow:0 0 8px var(--blue)}
+    /* Input row */
+    .input-wrap{display:flex;gap:10px;margin-bottom:14px}
+    .input-wrap input{flex:1;background:var(--surface2);border:1px solid var(--border);
+        border-radius:12px;color:var(--text);font-family:var(--body);font-size:14px;
+        padding:13px 16px;outline:none;transition:border-color .2s;min-width:0}
+    .input-wrap input:focus{border-color:var(--green)}
+    .input-wrap input::placeholder{color:var(--muted)}
+    .btn-inspect{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+        color:var(--text);font-family:var(--body);font-size:13px;font-weight:600;
+        padding:0 18px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;
+        gap:6px;transition:all .2s;height:46px}
+    .btn-inspect:hover{border-color:var(--green);color:var(--green)}
+    .btn-inspect:disabled{opacity:.5;cursor:not-allowed}
+    /* Preview */
+    .preview{display:none;flex;gap:14px;align-items:center;background:var(--surface2);
+        border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;
+        animation:fade .3s ease}
+    .preview.show{display:flex}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+    .preview img{width:90px;height:58px;object-fit:cover;border-radius:8px;flex-shrink:0}
+    .prev-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:4px;
+        display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .prev-sub{font-size:11px;color:var(--muted)}
+    /* Error box */
+    .errbox{display:none;background:rgba(255,71,87,.07);border:1px solid rgba(255,71,87,.25);
+        border-radius:10px;padding:11px 15px;font-size:13px;color:#ff7080;
+        line-height:1.5;margin-bottom:14px;word-break:break-word}
+    .errbox.show{display:block}
+    /* Download buttons */
+    .btn-row{display:flex;gap:10px}
+    .btn{flex:1;display:flex;align-items:center;gap:11px;padding:13px 16px;
+        border-radius:12px;border:none;cursor:pointer;font-family:var(--body);
+        text-align:left;transition:transform .15s,box-shadow .15s;color:#fff}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .btn:active{transform:none}
+    .btn.mp3{background:linear-gradient(135deg,#ff6b35,#f7931e)}
+    .btn.mp4{background:linear-gradient(135deg,#3d8ef8,#1e5fc4)}
+    .btn.conv{background:linear-gradient(135deg,#00e87b,#00b85e);color:#001a0d;
+        width:100%;margin-top:14px}
+    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+    .bico{font-size:22px;line-height:1}
+    .btn strong{display:block;font-size:13px;font-weight:700}
+    .btn small{font-size:11px;opacity:.75}
+    /* OR divider */
+    .or{text-align:center;position:relative;margin:8px 0}
+    .or::before{content:'';position:absolute;top:50%;left:0;right:0;
+        height:1px;background:var(--border)}
+    .or span{position:relative;background:var(--bg);padding:0 14px;
+        font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+    /* Drop zone */
+    .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:8px;border:2px dashed var(--border);border-radius:12px;padding:28px 20px;
+        cursor:pointer;transition:border-color .2s,background .2s;text-align:center}
+    .drop input{display:none}
+    .drop:hover,.drop.over{border-color:var(--blue);background:rgba(61,142,248,.04)}
+    .drop-ico{font-size:30px}
+    .drop-txt{font-size:14px;font-weight:500}
+    .drop-txt u{color:var(--blue)}
+    .drop small{color:var(--muted);font-size:11px}
+    /* Features */
+    .feats{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;justify-content:center}
+    .feat{font-size:12px;color:var(--muted);border:1px solid var(--border);
+        border-radius:20px;padding:5px 14px}
+    /* Progress overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
+        z-index:1000;display:flex;align-items:center;justify-content:center;
+        opacity:0;pointer-events:none;transition:opacity .3s}
+    .overlay.on{opacity:1;pointer-events:all}
+    .pbox{background:var(--surface);border:1px solid var(--border);
+        border-radius:20px;padding:40px 48px;text-align:center;max-width:320px;width:88%}
+    .spin{width:40px;height:40px;border:3px solid var(--border);
+        border-top-color:var(--green);border-radius:50%;
+        animation:spin .8s linear infinite;margin:0 auto 20px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .ptitle{font-family:var(--display);font-weight:700;font-size:18px;margin-bottom:8px}
+    .psub{font-size:13px;color:var(--muted)}
+    /* Toast */
+    .toast{position:fixed;bottom:28px;left:50%;
+        transform:translateX(-50%) translateY(80px);
+        background:var(--surface);border:1px solid var(--border);color:var(--text);
+        font-size:13px;font-weight:500;padding:12px 22px;border-radius:30px;
+        white-space:nowrap;z-index:2000;
+        transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;
+        opacity:0;box-shadow:0 8px 32px rgba(0,0,0,.5);pointer-events:none}
+    .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+    .toast.ok{border-color:var(--green);color:var(--green)}
+    .toast.err{border-color:#ff4757;color:#ff4757}
+    .toast.info{border-color:var(--blue);color:var(--blue)}
+    @media(max-width:480px){
+        .btn-row{flex-direction:column}
+        .pbox{padding:32px 24px}
+    }
+    </style>
 </head>
 <body>
 
-<div class="noise"></div>
-
 <header>
-    <div class="logo">
-        <span class="logo-icon">▼</span>
-        <span>MediaDrop</span>
-    </div>
-    <div class="badge">v2.0</div>
+    <div class="logo"><span>▼</span><span>MediaDrop</span></div>
+    <div class="badge">v2.1</div>
 </header>
 
 <main>
@@ -26,252 +152,201 @@
         <p class="hero-sub">YouTube · Instagram · Facebook · TikTok · Twitter/X · and 1000+ sites</p>
     </section>
 
-    <!-- URL Download Card -->
-    <div class="card" id="urlCard">
-        <div class="card-label">
-            <span class="dot green"></span> Download from Link
-        </div>
+    <!-- ── URL Download ── -->
+    <div class="card">
+        <div class="card-label"><span class="dot g"></span> Download from Link</div>
 
         <div class="input-wrap">
             <input type="text" id="urlInput" placeholder="Paste video URL here…" autocomplete="off" spellcheck="false">
-            <button class="btn-fetch" id="fetchBtn" onclick="fetchInfo()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <button class="btn-inspect" id="fetchBtn" onclick="fetchInfo()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 Inspect
             </button>
         </div>
 
-        <!-- Preview Panel -->
-        <div class="preview-panel" id="previewPanel" style="display:none">
-            <img id="previewThumb" src="" alt="thumbnail">
-            <div class="preview-meta">
-                <div class="preview-title" id="previewTitle"></div>
-                <div class="preview-sub" id="previewSub"></div>
-            </div>
+        <div class="preview" id="preview">
+            <img id="pThumb" src="" alt="">
+            <div><div class="prev-title" id="pTitle"></div><div class="prev-sub" id="pSub"></div></div>
         </div>
 
+        <div class="errbox" id="urlErr"></div>
+
         <div class="btn-row">
-            <button class="btn mp3" onclick="downloadUrl('audio')">
-                <span class="btn-icon">🎵</span>
-                <span>
-                    <strong>Download MP3</strong>
-                    <small>Audio · 192kbps</small>
-                </span>
+            <button class="btn mp3" onclick="dlUrl('audio')">
+                <span class="bico">🎵</span>
+                <span><strong>Download MP3</strong><small>Audio · 192kbps</small></span>
             </button>
-            <button class="btn mp4" onclick="downloadUrl('video')">
-                <span class="btn-icon">🎬</span>
-                <span>
-                    <strong>Download MP4</strong>
-                    <small>Best quality video</small>
-                </span>
+            <button class="btn mp4" onclick="dlUrl('video')">
+                <span class="bico">🎬</span>
+                <span><strong>Download MP4</strong><small>Best quality</small></span>
             </button>
         </div>
     </div>
 
-    <!-- Divider -->
-    <div class="or-divider"><span>or</span></div>
+    <div class="or"><span>or</span></div>
 
-    <!-- Upload Card -->
-    <div class="card" id="uploadCard">
-        <div class="card-label">
-            <span class="dot blue"></span> Convert Local File
-        </div>
+    <!-- ── Upload / Convert ── -->
+    <div class="card">
+        <div class="card-label"><span class="dot b"></span> Convert Local File</div>
 
-        <label class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput" accept="video/*" onchange="handleFileSelect(this)">
-            <div class="drop-icon">📁</div>
-            <div class="drop-text" id="dropText">Drop video file here or <u>browse</u></div>
+        <label class="drop" id="dropZone">
+            <input type="file" id="fileInput" accept="video/*" onchange="onFile(this)">
+            <div class="drop-ico">📁</div>
+            <div class="drop-txt" id="dropTxt">Drop video file here or <u>browse</u></div>
             <small>MP4, MKV, MOV, AVI, WebM…</small>
         </label>
 
-        <button class="btn upload-btn" id="convertBtn" onclick="uploadFile()" disabled>
-            <span class="btn-icon">⚡</span>
-            <span>
-                <strong>Convert to MP3</strong>
-                <small>192kbps · High Quality</small>
-            </span>
+        <div class="errbox" id="upErr"></div>
+
+        <button class="btn conv" id="convBtn" onclick="doUpload()" disabled>
+            <span class="bico">⚡</span>
+            <span><strong>Convert to MP3</strong><small>192kbps · High Quality</small></span>
         </button>
     </div>
 
-    <div class="features">
-        <div class="feature">⚡ Fast processing</div>
-        <div class="feature">🔒 No data stored</div>
-        <div class="feature">🎧 192kbps audio</div>
-        <div class="feature">📦 Docker-powered</div>
+    <div class="feats">
+        <div class="feat">⚡ Fast processing</div>
+        <div class="feat">🔒 No data stored</div>
+        <div class="feat">🎧 192kbps audio</div>
+        <div class="feat">📦 Docker-powered</div>
     </div>
 </main>
 
 <!-- Progress overlay -->
-<div class="progress-overlay" id="progressOverlay">
-    <div class="progress-box">
-        <div class="spinner"></div>
-        <div class="progress-title" id="progressTitle">Processing…</div>
-        <div class="progress-sub" id="progressSub">This may take a moment</div>
+<div class="overlay" id="overlay">
+    <div class="pbox">
+        <div class="spin"></div>
+        <div class="ptitle" id="ptitle">Processing…</div>
+        <div class="psub" id="psub">Please wait</div>
     </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-    async function fetchInfo() {
-        const url = document.getElementById('urlInput').value.trim();
-        if (!url) return toast('Please paste a URL first', 'error');
-
-        const btn = document.getElementById('fetchBtn');
-        btn.textContent = '…';
-        btn.disabled = true;
-
-        try {
-            const fd = new FormData();
-            fd.append('url', url);
-            const res = await fetch('/info', { method: 'POST', body: fd });
-            const data = await res.json();
-
-            if (data.error) throw new Error(data.error);
-
-            document.getElementById('previewThumb').src = data.thumbnail;
-            document.getElementById('previewTitle').textContent = data.title;
-            document.getElementById('previewSub').textContent =
-                `${data.platform} · ${data.uploader} · ${formatDuration(data.duration)}`;
-            document.getElementById('previewPanel').style.display = 'flex';
-            toast('Video found! Choose a format below.', 'success');
-        } catch (e) {
-            toast(e.message, 'error');
-        } finally {
-            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Inspect`;
-            btn.disabled = false;
-        }
+// ── Inspect ───────────────────────────────────────────────
+async function fetchInfo() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) return toast('Paste a URL first', 'err');
+    const btn = document.getElementById('fetchBtn');
+    btn.textContent = '…'; btn.disabled = true;
+    setErr('urlErr', '');
+    try {
+        const fd = new FormData(); fd.append('url', url);
+        const r = await fetch('/info', { method:'POST', body:fd });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        document.getElementById('pThumb').src = d.thumbnail || '';
+        document.getElementById('pTitle').textContent = d.title || '';
+        document.getElementById('pSub').textContent =
+            [d.platform, d.uploader, fmtDur(d.duration)].filter(Boolean).join(' · ');
+        document.getElementById('preview').classList.add('show');
+        toast('Video found!', 'ok');
+    } catch(e) {
+        setErr('urlErr', e.message);
+    } finally {
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Inspect`;
+        btn.disabled = false;
     }
+}
 
-    function downloadUrl(format) {
-        const url = document.getElementById('urlInput').value.trim();
-        if (!url) return toast('Please paste a URL first', 'error');
-
-        showProgress(
-            format === 'audio' ? 'Extracting audio…' : 'Downloading video…',
-            'yt-dlp is fetching and processing your file'
-        );
-
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/download';
-        form.style.display = 'none';
-        addField(form, 'url', url);
-        addField(form, 'format_type', format);
-        document.body.appendChild(form);
-
-        // Use iframe trick to detect completion
-        const iframe = document.createElement('iframe');
-        iframe.name = 'dl_frame';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        form.target = 'dl_frame';
-
-        iframe.onload = () => {
-            hideProgress();
-            try {
-                const txt = iframe.contentDocument.body.innerText;
-                if (txt && txt.includes('error')) {
-                    const parsed = JSON.parse(txt);
-                    toast(parsed.error, 'error');
-                }
-            } catch (_) {
-                toast('Download started!', 'success');
-            }
-            setTimeout(() => { iframe.remove(); form.remove(); }, 3000);
-        };
-
-        form.submit();
-        // Fallback hide after 90s
-        setTimeout(hideProgress, 90000);
-    }
-
-    function addField(form, name, value) {
-        const i = document.createElement('input');
-        i.type = 'hidden';
-        i.name = name;
-        i.value = value;
-        form.appendChild(i);
-    }
-
-    function handleFileSelect(input) {
-        const file = input.files[0];
-        if (!file) return;
-        document.getElementById('dropText').textContent = `✅ ${file.name}`;
-        document.getElementById('convertBtn').disabled = false;
-    }
-
-    async function uploadFile() {
-        const input = document.getElementById('fileInput');
-        if (!input.files[0]) return toast('Please select a file first', 'error');
-
-        showProgress('Converting to MP3…', 'FFmpeg is processing your video file');
-
+// ── Download via fetch → blob ─────────────────────────────
+// This is the KEY FIX: use fetch() not a form POST
+// so we can catch JSON error responses properly.
+async function dlUrl(fmt) {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) return toast('Paste a URL first', 'err');
+    setErr('urlErr', '');
+    showOv(fmt==='audio' ? 'Extracting audio…' : 'Downloading video…',
+           'yt-dlp is fetching your file — please wait');
+    try {
         const fd = new FormData();
-        fd.append('file', input.files[0]);
-
-        try {
-            const res = await fetch('/upload', { method: 'POST', body: fd });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Conversion failed');
-            }
-            const blob = await res.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            const name = input.files[0].name.replace(/\.[^.]+$/, '') + '.mp3';
-            a.download = name;
-            a.click();
-            toast('Conversion complete! Downloading…', 'success');
-        } catch (e) {
-            toast(e.message, 'error');
-        } finally {
-            hideProgress();
+        fd.append('url', url);
+        fd.append('format_type', fmt);
+        const res = await fetch('/download', { method:'POST', body:fd });
+        const ct = res.headers.get('content-type') || '';
+        if (!res.ok || ct.includes('application/json')) {
+            const j = await res.json();
+            throw new Error(j.error || 'Download failed');
         }
-    }
+        const blob = await res.blob();
+        const disp = res.headers.get('content-disposition') || '';
+        const name = disp.match(/filename="?([^";\n]+)"?/)?.[1]
+            || (fmt==='audio' ? 'audio.mp3' : 'video.mp4');
+        triggerDl(blob, name);
+        toast('Download started! 🎉', 'ok');
+    } catch(e) {
+        setErr('urlErr', e.message);
+        toast('Failed: ' + e.message.slice(0,60), 'err');
+    } finally { hideOv(); }
+}
 
-    function showProgress(title, sub) {
-        document.getElementById('progressTitle').textContent = title;
-        document.getElementById('progressSub').textContent = sub;
-        document.getElementById('progressOverlay').classList.add('active');
-    }
+// ── Upload / convert ──────────────────────────────────────
+function onFile(inp) {
+    if (!inp.files[0]) return;
+    document.getElementById('dropTxt').textContent = '✅ ' + inp.files[0].name;
+    document.getElementById('convBtn').disabled = false;
+    setErr('upErr', '');
+}
 
-    function hideProgress() {
-        document.getElementById('progressOverlay').classList.remove('active');
-    }
+async function doUpload() {
+    const inp = document.getElementById('fileInput');
+    if (!inp.files[0]) return toast('Select a file first', 'err');
+    setErr('upErr', '');
+    showOv('Converting to MP3…', 'FFmpeg is processing your video');
+    try {
+        const fd = new FormData(); fd.append('file', inp.files[0]);
+        const res = await fetch('/upload', { method:'POST', body:fd });
+        if (!res.ok) { const j = await res.json(); throw new Error(j.error||'Failed'); }
+        const blob = await res.blob();
+        triggerDl(blob, inp.files[0].name.replace(/\.[^.]+$/, '') + '.mp3');
+        toast('Converted! Downloading…', 'ok');
+    } catch(e) {
+        setErr('upErr', e.message);
+        toast('Failed: ' + e.message.slice(0,60), 'err');
+    } finally { hideOv(); }
+}
 
-    function toast(msg, type = 'info') {
-        const el = document.getElementById('toast');
-        el.textContent = msg;
-        el.className = `toast ${type} show`;
-        setTimeout(() => el.classList.remove('show'), 4000);
-    }
+// ── Helpers ───────────────────────────────────────────────
+function triggerDl(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+}
+function showOv(t, s) {
+    document.getElementById('ptitle').textContent = t;
+    document.getElementById('psub').textContent = s;
+    document.getElementById('overlay').classList.add('on');
+}
+function hideOv() { document.getElementById('overlay').classList.remove('on'); }
+function setErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg ? '⚠️ ' + msg : '';
+    el.classList.toggle('show', !!msg);
+}
+function toast(msg, type='info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} on`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('on'), 4500);
+}
+function fmtDur(s) {
+    if (!s) return '';
+    return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
 
-    function formatDuration(sec) {
-        if (!sec) return '';
-        const m = Math.floor(sec / 60);
-        const s = sec % 60;
-        return `${m}:${String(s).padStart(2, '0')}`;
-    }
-
-    // Drag-and-drop
-    const dz = document.getElementById('dropZone');
-    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-    dz.addEventListener('drop', e => {
-        e.preventDefault();
-        dz.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            document.getElementById('fileInput').files = e.dataTransfer.files;
-            handleFileSelect(document.getElementById('fileInput'));
-        }
-    });
-
-    // Enter key on URL input
-    document.getElementById('urlInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') fetchInfo();
-    });
+// ── Drag & Drop ───────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) { document.getElementById('fileInput').files = e.dataTransfer.files; onFile(document.getElementById('fileInput')); }
+});
+document.getElementById('urlInput').addEventListener('keydown', e => { if(e.key==='Enter') fetchInfo(); });
 </script>
 </body>
 </html>
